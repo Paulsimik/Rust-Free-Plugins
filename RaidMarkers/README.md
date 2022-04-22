@@ -8,7 +8,8 @@
     /rmtest - make a test raid marker at your position
 
 # Configuration
-    {
+```
+{
   "Blaclisted prefabs": [
     "wall.external.high.wood",
     "wall.external.high.stone"
@@ -30,3 +31,4 @@
     "Patch": 0
   }
 }
+```
