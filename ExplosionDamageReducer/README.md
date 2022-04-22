@@ -3,6 +3,7 @@
 
 # Configuration
     Values are in %
+
     "Apply reduced damage to the attacker": false,
     "Rocket": 100,
     "High Velocity Rocket": 100,
