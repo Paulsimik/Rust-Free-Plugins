@@ -2,7 +2,7 @@
     Make markers on the map if players destroy entities (buildings) or additional prefabs with explosives.
 
 # Permissions
-    raidmarkers.allow - allow to see markers
+    raidmarkers.allow
 
 # Chat Commands
     /rmtest - make a test raid marker at your position
