@@ -7,4 +7,4 @@
     "Apply reduced damage to the attacker": false,
     "Rocket": 100,
     "High Velocity Rocket": 100,
-    "HE Grenade": 100,
+    "HE Grenade": 100, 
