@@ -9,6 +9,9 @@
     - Plugin release
  1.0.1
     - Added Localization
+ 1.0.2
+    - Added permissions to see markers
+    - Added hook CanNetworkTo
 
  #######################################################################
 */
@@ -22,18 +25,21 @@ using Newtonsoft.Json;
 
 namespace Oxide.Plugins
 {
-    [Info("Raid Markers", "Paulsimik", "1.0.1")]
+    [Info("Raid Markers", "Paulsimik", "1.0.2")]
     [Description("Raid Markers on the map")]
-    class RaidMarkers_old : RustPlugin
+    class RaidMarkers : RustPlugin
     {
         #region [Fields]
 
+        private const string permAllow = "raidmarkers.allow";
         private Configuration config;
         private HashSet<MapMarkerGenericRadius> raidMarkers = new HashSet<MapMarkerGenericRadius>();
 
         #endregion
 
         #region [Oxide Hooks]
+
+        private void Init() => permission.RegisterPermission(permAllow, this);
 
         private void Unload() => ClearRaidMarkers();
 
@@ -59,6 +65,20 @@ namespace Oxide.Plugins
             }
         }
 
+        private bool CanNetworkTo(MapMarkerGenericRadius marker, BasePlayer player)
+        {
+            if (marker == null || player == null)
+                return true;
+
+            if (!raidMarkers.Contains(marker))
+                return true;
+
+            if (!permission.UserHasPermission(player.UserIDString, permAllow))
+                return false;
+
+            return true;
+        }
+
         #endregion
 
         #region [Hooks]   
@@ -69,13 +89,13 @@ namespace Oxide.Plugins
             if (marker == null)
                 return;
 
+            raidMarkers.Add(marker);
             marker.alpha = config.markerConfiguration.markerAlpha;
             marker.radius = config.markerConfiguration.markerRadius;
             marker.color1 = ParseColor(config.markerConfiguration.markerColor1);
             marker.color2 = ParseColor(config.markerConfiguration.markerColor2);
             marker.Spawn();
             marker.SendUpdate();
-            raidMarkers.Add(marker);
 
             timer.In(config.markerConfiguration.markerDuration, () =>
             {
