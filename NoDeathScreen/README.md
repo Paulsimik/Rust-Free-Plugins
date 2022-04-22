@@ -2,11 +2,11 @@
     Is a simple plugin that disables the death screen by automatically respawning players.
 
 # Permissions
-    **nodeathscreen.use** - to use plugin features
-    **nodeathscreen.toggle** - for toggle features
+    nodeathscreen.use - to use plugin features
+    nodeathscreen.toggle - for toggle features
 
 # Chat Commands
-    **/nodeathscreen** - for enable or disable auto respawn (need toggle permissions)
+    /nodeathscreen - for enable or disable auto respawn (need toggle permissions)
 
 # Configuration
 ```
