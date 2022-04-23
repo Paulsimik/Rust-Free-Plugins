@@ -14,8 +14,8 @@
     portablevehicles.give 'steamID/player name' 'vehicle name' - give vehicle to player (need admin permissions)
 
 # Configuration
-    ```
-    {
+```
+{
   "Chat Icon": 0,
   "Hits count to pickup vehicle": 5,
   "Automatically mount players": false,
