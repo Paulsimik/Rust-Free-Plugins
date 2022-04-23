@@ -42,7 +42,8 @@
     "Minor": 1,
     "Patch": 2
   }
-}```
+}
+```
 
 # Available Vehicles
     rhib
