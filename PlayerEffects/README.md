@@ -12,4 +12,4 @@
     /pe help - available commands
 
 # Video
-Visit https://www.youtube.com/watch?v=0y1LoSfVcPo
+https://www.youtube.com/watch?v=0y1LoSfVcPo
