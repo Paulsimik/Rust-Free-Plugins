@@ -18,6 +18,10 @@
     "cupboard.tool.deployed"
   ],
   "Distance when place new marker from another marker": 100,
+  "Enable write grid position to chat": true,
+  "Disable marker for authorized players in cupboard": true,
+  "Create marker for online raid": true,
+  "Create marker for offline raid": true,
   "Marker configuration": {
     "Alpha": 0.6,
     "Radius": 0.7,
@@ -28,7 +32,7 @@
   "version": {
     "Major": 1,
     "Minor": 0,
-    "Patch": 0
+    "Patch": 3
   }
 }
 ```
