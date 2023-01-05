@@ -16,7 +16,7 @@ using System.Linq;
 
 namespace Oxide.Plugins
 {
-    [Info("Unlock Dlc Items", "Paulsimik", "1.0.0")]
+    [Info("Unlock DLC Items", "Paulsimik", "1.0.0")]
     [Description("Unlock all DLC items blueprints")]
     class UnlockDlcItems : RustPlugin
     {

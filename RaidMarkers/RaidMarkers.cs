@@ -12,6 +12,13 @@
  1.0.2
     - Added permissions to see markers
     - Added hook CanNetworkTo
+ 1.0.3
+    - Added option grid position
+    - Added config update
+    - Added option for entity owner
+    - Added option for authorized players
+    - Added option show online/offline raid
+    - Change CanNetworkTo to object
 
  #######################################################################
 */
@@ -25,7 +32,7 @@ using Newtonsoft.Json;
 
 namespace Oxide.Plugins
 {
-    [Info("Raid Markers", "Paulsimik", "1.0.2")]
+    [Info("Raid Markers", "Paulsimik", "1.0.3")]
     [Description("Raid Markers on the map")]
     class RaidMarkers : RustPlugin
     {
@@ -48,10 +55,6 @@ namespace Oxide.Plugins
             if (entity == null || info == null)
                 return;
 
-            var attacker = info.InitiatorPlayer;
-            if (attacker == null)
-                return;
-
             if (entity.lastDamage != DamageType.Explosion)
                 return;
 
@@ -60,23 +63,43 @@ namespace Oxide.Plugins
 
             if (entity.name.Contains("building") || config.additionalPrefab.Contains(entity.ShortPrefabName))
             {
-                if (IsFar(entity.ServerPosition))
-                    CreateRaidMarker(entity.ServerPosition);
+                if (!IsFar(entity.ServerPosition))
+                    return;
+
+                var attacker = info.InitiatorPlayer;
+                if (attacker == null)
+                    return;
+
+                var buildingPrivlidge = entity.GetBuildingPrivilege();
+                if (buildingPrivlidge != null && buildingPrivlidge.authorizedPlayers.Count > 0)
+                {
+                    if (config.authorizedPlayer && IsAuthed(attacker, buildingPrivlidge))
+                        return;
+
+                    var online = IsOnlineRaid(buildingPrivlidge);
+                    if (!config.showOnline && online)
+                        return;
+
+                    if (!config.showOffline && !online)
+                        return;
+                }
+
+                if (config.chatGridPosition)
+                    Server.Broadcast(GetLang("GridPosition", null, GetGridPosition(entity.ServerPosition)));
+
+                CreateRaidMarker(entity.ServerPosition);
             }
         }
 
-        private bool CanNetworkTo(MapMarkerGenericRadius marker, BasePlayer player)
+        private object CanNetworkTo(MapMarkerGenericRadius marker, BasePlayer player)
         {
             if (marker == null || player == null)
-                return true;
+                return null;
 
-            if (!raidMarkers.Contains(marker))
-                return true;
-
-            if (!permission.UserHasPermission(player.UserIDString, permAllow))
+            if (raidMarkers.Contains(marker) && !permission.UserHasPermission(player.UserIDString, permAllow))
                 return false;
 
-            return true;
+            return null;
         }
 
         #endregion
@@ -134,6 +157,23 @@ namespace Oxide.Plugins
             return isFar;
         }
 
+        private bool IsAuthed(BasePlayer player, BuildingPrivlidge buildingPrivlidge)
+        {
+            return buildingPrivlidge.IsAuthed(player);
+        }
+
+        private bool IsOnlineRaid(BuildingPrivlidge buildingPrivlidge)
+        {
+            foreach (var authPlayer in buildingPrivlidge.authorizedPlayers)
+            {
+                BasePlayer player = BasePlayer.FindByID(authPlayer.userid);
+                if (player != null && player.IsConnected)
+                    return true;
+            }
+
+            return false;
+        }
+
         private double GetDistance(Vector3 pos1, Vector3 pos2)
         {
             return Math.Round(Vector3.Distance(pos1, pos2), 0);
@@ -149,6 +189,31 @@ namespace Oxide.Plugins
                 return color;
 
             return Color.white;
+        }
+
+        public static string GetGridPosition(Vector3 position)
+        {
+            Vector2 vector = new Vector2(TerrainMeta.NormalizeX(position.x), TerrainMeta.NormalizeZ(position.z));
+            float num = TerrainMeta.Size.x / 1024f;
+            int num2 = 7;
+            Vector2 vector2 = vector * num * num2;
+            float num3 = Mathf.Floor(vector2.x) + 1f;
+            float num4 = Mathf.Floor(num * (float)num2 - vector2.y);
+            string text = string.Empty;
+            float num5 = num3 / 26f;
+            float num6 = num3 % 26f;
+            if (num6 == 0f)
+            {
+                num6 = 26f;
+            }
+
+            if (num5 > 1f)
+            {
+                text += Convert.ToChar(64 + (int)num5);
+            }
+
+            text += Convert.ToChar(64 + (int)num6);
+            return $"{text}{num4}";
         }
 
         #endregion 
@@ -182,6 +247,18 @@ namespace Oxide.Plugins
 
             [JsonProperty(PropertyName = "Distance when place new marker from another marker")]
             public int markerDistance;
+
+            [JsonProperty("Enable write grid position to chat")]
+            public bool chatGridPosition;
+
+            [JsonProperty("Disable marker for authorized players in cupboard")]
+            public bool authorizedPlayer;
+
+            [JsonProperty("Create marker for online raid")]
+            public bool showOnline;
+
+            [JsonProperty("Create marker for offline raid")]
+            public bool showOffline;
 
             [JsonProperty(PropertyName = "Marker configuration")]
             public MarkerConfiguration markerConfiguration;
@@ -225,6 +302,10 @@ namespace Oxide.Plugins
                     "cupboard.tool.deployed"
                 },
                 markerDistance = 100,
+                chatGridPosition = true,
+                authorizedPlayer = true,
+                showOnline = true,
+                showOffline = true,
                 markerConfiguration = new MarkerConfiguration
                 {
                     markerAlpha = 0.6f,
@@ -254,9 +335,10 @@ namespace Oxide.Plugins
                 config = Config.ReadObject<Configuration>();
 
                 if (config == null)
-                {
                     LoadDefaultConfig();
-                }
+
+                if (config.version < Version)
+                    UpdateConfig();
             }
             catch
             {
@@ -267,18 +349,26 @@ namespace Oxide.Plugins
             SaveConfig();
         }
 
+        private void UpdateConfig()
+        {
+            Puts("Updating configuration values.....");
+            config.version = Version;
+            Puts("Configuration updated");
+        }
+
         #endregion
 
         #region [Localization]
 
-        private string GetLang(string key, string playerID) => lang.GetMessage(key, this, playerID);
+        private string GetLang(string key, string playerID, params object[] args) => string.Format(lang.GetMessage(key, this, playerID), args);
 
         protected override void LoadDefaultMessages()
         {
             lang.RegisterMessages(new Dictionary<string, string>
             {
                 { "NoPerm", "You don't have permissions" },
-                { "TestRaidMarker", "Test Raid Marker created on your position" }
+                { "TestRaidMarker", "Test Raid Marker created on your position" },
+                { "GridPosition", "Starting raid at {0} position" }
 
             }, this);
         }
