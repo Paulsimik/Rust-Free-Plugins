@@ -19,32 +19,24 @@
     - Added snowmobile
     - Added option what item you will be placing
  1.1.3
-    - Changed new skinId icons
+    - Changed skinId icons
+    - Added tugboat
+    - Added tomaha snowmobile
+    - Added option item for big models
+    - Added option pickup any vehicles
+    - Added option pickup own vehicles
+    - Added option require building priviledge
 
  #######################################################################
 */
 
 using System.Collections.Generic;
 using System.Linq;
+using ConVar;
 using Newtonsoft.Json;
 using Oxide.Core;
 using UnityEngine;
 using VLB;
-using Oxide.Core.Libraries.Covalence;
-using Oxide.Game.Rust.Cui;
-using System;
-using Oxide.Core.Plugins;
-using Oxide.Core.Configuration;
-using Rust;
-using Network;
-using System.Globalization;
-using System.IO;
-using ProtoBuf;
-using System.Collections;
-using Diag = System.Diagnostics;
-using Oxide.Core.Libraries;
-using Oxide.Game.Rust.Libraries;
-using Time = UnityEngine.Time;
 
 namespace Oxide.Plugins
 {
@@ -58,13 +50,7 @@ namespace Oxide.Plugins
         private const string permUse = "portablevehicles.use";
         private const string permAdmin = "portablevehicles.admin";
         private const string permPickup = "portablevehicles.pickup";
-        private const string portableVehiclesUI = "portable_vehicles_UI";
         private string[] chatCommands = { "pv", "portablevehicles", "portablevehicle" };
-
-        private const string EFFECT_ITEM_BREAK = "assets/bundled/prefabs/fx/item_break.prefab";
-        private const string EFFECT_ITEM_PICKUP = "assets/prefabs/weapons/arms/effects/pickup_item.prefab";
-
-        private Dictionary<string, PickupMono> pickupMono = new Dictionary<string, PickupMono>();
 
         #endregion
 
@@ -78,23 +64,6 @@ namespace Oxide.Plugins
 
             foreach (var command in chatCommands)
                 cmd.AddChatCommand(command, this, nameof(cmdPortableVehicles));
-        }
-
-        private void OnServerInitialized()
-        {
-            foreach (var player in BasePlayer.activePlayerList)
-            {
-                //CuiHelper.DestroyUi(player, portableVehiclesUI);
-                player.GetOrAddComponent<PickupMono>();
-            }
-        }
-
-        private void Unload()
-        {
-            var objects = UnityEngine.Object.FindObjectsOfType<PickupMono>();
-            if (objects != null)
-                foreach (var obj in objects)
-                    UnityEngine.Object.Destroy(obj);
         }
 
         private void OnEntityBuilt(Planner plan, GameObject go) => CheckPlacement(plan, go);
@@ -119,18 +88,6 @@ namespace Oxide.Plugins
         #endregion
 
         #region [Hooks]   
-
-        private void InitPlayer(BasePlayer player)
-        {
-            if (pickupMono.ContainsKey(player.UserIDString))
-                return;
-
-            var pickupPlayer = player.GetOrAddComponent<PickupMono>();
-            if (pickupPlayer == null)
-                return;
-
-            pickupMono.Add(player.UserIDString, pickupPlayer);
-        }
 
         private void CheckPlacement(Planner plan, GameObject go)
         {
@@ -159,10 +116,10 @@ namespace Oxide.Plugins
                 }
             });
 
-            var time = 0.5f;
+            var time = 1f;
             if (info.bigModel)
             {
-                time = 5f;
+                time = 3f;
                 Message(player, "BigModel");
             }
 
@@ -201,11 +158,29 @@ namespace Oxide.Plugins
             if (entity == null)
                 return false;
 
-            if (entity.skinID == 0)
+            if (!config.pickupAnyVehicles && entity.skinID == 0)
                 return false;
 
             if (!permission.UserHasPermission(player.UserIDString, permPickup))
                 return false;
+
+            if (config.pickupableBlacklist.Contains(entity.ShortPrefabName))
+            {
+                Message(player, "Pickupable");
+                return true;
+            }
+
+            if (config.pickupOwnVehicles && entity.OwnerID != player.userID)
+            {
+                Message(player, "Pickup Ownership");
+                return true;
+            }
+
+            if (config.requireBuildingPrivilege && !player.CanBuild())
+            {
+                Message(player, "Cupboard");
+                return true;
+            }
 
             var time = entity.SecondsSinceAttacked;
             if (time < 30)
@@ -219,24 +194,6 @@ namespace Oxide.Plugins
             {
                 Message(player, "Durability");
                 return false;
-            }
-
-            if (config.pickupableBlacklist.Contains(entity.ShortPrefabName))
-            {
-                Message(player, "Pickupable");
-                return true;
-            }
-
-            if (entity.OwnerID != player.userID)
-            {
-                Message(player, "Pickup Ownership");
-                return true;
-            }
-
-            if (!player.CanBuild())
-            {
-                Message(player, "Cupboard");
-                return true;
             }
 
             var containers = entity.GetComponentsInChildren<StorageContainer>();
@@ -262,12 +219,12 @@ namespace Oxide.Plugins
                 return true;
             }
 
-            foreach (var value in AllVehicles)
+            foreach (var vehicle in AllVehicles)
             {
-                if (value.prefab == entity.PrefabName)
+                if (vehicle.prefab == entity.PrefabName)
                 {
                     entity.Kill();
-                    GiveItem(player, value.skinId, value.displayName, value.isWaterVehicle);
+                    GiveItem(player, vehicle);
                     return true;
                 }
             }
@@ -280,11 +237,29 @@ namespace Oxide.Plugins
             if (balloon == null)
                 return false;
 
-            if (balloon.skinID == 0)
+            if (!config.pickupAnyVehicles && balloon.skinID == 0)
                 return false;
 
             if (!permission.UserHasPermission(player.UserIDString, permPickup))
                 return false;
+
+            if (config.pickupableBlacklist.Contains(balloon.ShortPrefabName))
+            {
+                Message(player, "Pickupable");
+                return true;
+            }
+
+            if (config.pickupOwnVehicles && balloon.OwnerID != player.userID)
+            {
+                Message(player, "Pickup Ownership");
+                return true;
+            }
+
+            if (config.requireBuildingPrivilege && !player.CanBuild())
+            {
+                Message(player, "Cupboard");
+                return true;
+            }
 
             var time = balloon.SecondsSinceAttacked;
             if (time < 30)
@@ -298,24 +273,6 @@ namespace Oxide.Plugins
             {
                 Message(player, "Durability");
                 return false;
-            }
-
-            if (config.pickupableBlacklist.Contains(balloon.ShortPrefabName))
-            {
-                Message(player, "Pickupable");
-                return true;
-            }
-
-            if (balloon.OwnerID != player.userID)
-            {
-                Message(player, "Pickup Ownership");
-                return true;
-            }
-
-            if (!player.CanBuild())
-            {
-                Message(player, "Cupboard");
-                return true;
             }
 
             var containers = balloon.GetComponentsInChildren<StorageContainer>();
@@ -341,12 +298,12 @@ namespace Oxide.Plugins
                 return true;
             }
 
-            foreach (var value in AllVehicles)
+            foreach (var vehicle in AllVehicles)
             {
-                if (value.prefab == balloon.PrefabName)
+                if (vehicle.prefab == balloon.PrefabName)
                 {
                     balloon.Kill();
-                    GiveItem(player, value.skinId, value.displayName, value.isWaterVehicle);
+                    GiveItem(player, vehicle);
                     return true;
                 }
             }
@@ -360,19 +317,23 @@ namespace Oxide.Plugins
             if (vehicle == null)
                 return;
 
-            GiveItem(player, skin, vehicle.displayName, vehicle.isWaterVehicle);
+            GiveItem(player, vehicle);
         }
 
-        private void GiveItem(BasePlayer player, ulong skinID, string name, bool isWaterVehicle)
+        private void GiveItem(BasePlayer player, VehicleEntry vehicle)
         {
-            if (string.IsNullOrEmpty(name))
-                name = "Portable Vehicle";
+            var name = string.IsNullOrEmpty(vehicle.displayName) ? "Portable Vehicle" : vehicle.displayName;
+            var shortname = "box.wooden.large";
+            if (vehicle.bigModel)
+            {
+                shortname = config.bigModelEntityShortName;
+            }
+            else
+            {
+                shortname = vehicle.isWaterVehicle ? config.waterEntityShortName : config.groundEntityShortName;
+            }
 
-            var shortname = isWaterVehicle ? config.waterEntityShortName : config.groundEntityShortName;
-            if (string.IsNullOrEmpty(shortname))
-                shortname = "box.wooden.large";
-
-            Item item = ItemManager.CreateByName(shortname, 1, skinID);
+            Item item = ItemManager.CreateByName(shortname, 1, vehicle.skinId);
             if (item != null)
             {
                 item.name = name;
@@ -398,7 +359,7 @@ namespace Oxide.Plugins
                 case "copter":
                 case "mini":
                 case "minicopter":
-                    return 2783365337;
+                    return 2906148311;
 
                 case "balloon":
                 case "hotairballoon":
@@ -441,7 +402,16 @@ namespace Oxide.Plugins
                     return 2783365593;
 
                 case "snowmobile":
+                case "snow":
                     return 2783366199;
+
+                case "tomahasnowmobile":
+                case "tsnowmobile":
+                case "tsnow":
+                    return 3000416835;
+
+                case "tugboat":
+                    return 3000418301;
 
                 default:
                     return 0;
@@ -544,16 +514,28 @@ namespace Oxide.Plugins
         private class Configuration
         {
             [JsonProperty(PropertyName = "Chat Icon")]
-            public uint chatIcon;
+            public ulong chatIcon;
 
             [JsonProperty("Hits count to pickup vehicle")]
             public int hitsToPickup;
+
+            [JsonProperty("Pickup any vehicles")]
+            public bool pickupAnyVehicles;
+
+            [JsonProperty("Pickup only your own vehicles")]
+            public bool pickupOwnVehicles;
+
+            [JsonProperty("Pickup require building priviledge")]
+            public bool requireBuildingPrivilege;
 
             [JsonProperty("Automatically mount players")]
             public bool autoMount;
 
             [JsonProperty(PropertyName = "Item shortname for water entity")]
             public string waterEntityShortName;
+
+            [JsonProperty(PropertyName = "Item shortname for big models")]
+            public string bigModelEntityShortName;
 
             [JsonProperty(PropertyName = "Item shortname for ground entity")]
             public string groundEntityShortName;
@@ -665,6 +647,19 @@ namespace Oxide.Plugins
                 skinId = 2783366199,
                 displayName = "Snowmobile",
                 prefab = "assets/content/vehicles/snowmobiles/snowmobile.prefab",
+            },
+            new VehicleEntry
+            {
+                skinId = 3000416835,
+                displayName = "TomahaSnowmobile",
+                prefab = "assets/content/vehicles/snowmobiles/tomahasnowmobile.prefab",
+            },
+            new VehicleEntry
+            {
+                skinId = 3000418301,
+                displayName = "Tugboat",
+                prefab = "assets/content/vehicles/boats/tugboat/tugboat.prefab",
+                isWaterVehicle = true
             }
         };
 
@@ -699,184 +694,6 @@ namespace Oxide.Plugins
             }
         }
 
-        private class PickupMono : MonoBehaviour
-        {
-            private BasePlayer player;
-            public BaseEntity entity;
-            private RaycastHit hit;
-            private float updateInterval = 0.3f;
-            private double lastInterval;
-            private float lastInpuTime;
-            private float value = 0;
-            private float maxRayDistance = 2;
-            private bool isActive = false;
-
-            void Awake()
-            {
-                player = GetComponent<BasePlayer>();
-                entity = GetComponent<BaseEntity>();
-                this.lastInpuTime = player.lastInputTime;
-            }
-
-            void FixedUpdate()
-            {
-                if (player == null || !player.IsConnected || player.IsDestroyed)
-                {
-                    Destroy(this);
-                    return;
-                }
-
-                if (this.lastInpuTime == player.lastInputTime)
-                    return;
-
-                if (player.serverInput.WasDown(BUTTON.FIRE_SECONDARY) && !IsInvoking())
-                {
-                    if (!IsActiveItem())
-                        return;
-
-                    if (!IsVehicle())
-                        return;
-
-                    Debug.Log("start invoke");
-                    isActive = true;
-                    InvokeRepeating(nameof(TryPickup), 0, 0.04f);
-                }
-                else if (!player.serverInput.WasDown(BUTTON.FIRE_SECONDARY) && IsInvoking())
-                {
-                    Debug.Log("cancel invoke");
-                    CancelInvoke(nameof(TryPickup));
-                    Destroy();
-                }
-
-                this.lastInpuTime = player.lastInputTime;
-            }
-
-            private void TryPickup()
-            {
-                value += 0.02f;
-
-                if (value > 1)
-                {
-                    if (!IsInvoking())
-                        return;
-
-                    CancelInvoke(nameof(PickupableUI));
-                    Destroy();
-                    PickupVehicle();
-                    return;
-                }
-
-                PickupableUI();
-            }
-
-            private void PickupableUI()
-            {
-                CuiElementContainer container = new CuiElementContainer();
-                container.Add(new CuiPanel
-                {
-                    CursorEnabled = false,
-                    Image = { Color = "0 0 0 0" },
-                    RectTransform = { AnchorMin = "0.41 0.48", AnchorMax = "0.59 0.51" }
-                }, "Hud", portableVehiclesUI);
-
-                container.Add(new CuiElement
-                {
-                    Parent = portableVehiclesUI,
-                    Components =
-                    {
-                        new CuiImageComponent
-                        {
-                            Sprite = "assets/icons/pickup.png"
-                        },
-                        new CuiRectTransformComponent
-                        {
-                            AnchorMin = "0 0.4",
-                            AnchorMax = "0.07 1"
-                        }
-                    }
-                });
-
-                container.Add(new CuiElement
-                {
-                    Parent = portableVehiclesUI,
-                    Components =
-                    {
-                        new CuiTextComponent
-                        {
-                            Color = "1 1 1",
-                            FontSize = 12,
-                            Text = "Pickup Vehicle"
-                        },
-                        new CuiRectTransformComponent
-                        {
-                            AnchorMin = "0.075 0",
-                            AnchorMax = "1 1"
-                        }
-                    }
-                });
-
-                container.Add(new CuiPanel
-                {
-                    Image = { Color = "1 1 1 0.2" },
-                    RectTransform = { AnchorMin = "0 0", AnchorMax = "1 0.3" }
-                }, portableVehiclesUI);
-
-                container.Add(new CuiPanel
-                {
-                    Image = { Color = "1 1 1 0.9" },
-                    RectTransform = { AnchorMin = "0 0", AnchorMax = $"{value} 0.3" }
-                }, portableVehiclesUI);
-
-                CuiHelper.DestroyUi(player, portableVehiclesUI);
-                CuiHelper.AddUi(player, container);
-            }
-
-            private void PickupVehicle()
-            {
-                RunEffect(player, EFFECT_ITEM_BREAK);
-
-                if (entity != null)
-                    entity.Kill();
-            }
-
-            private bool IsActiveItem()
-            {
-                return player.GetActiveItem()?.info.shortname == "hammer" ? true : false;
-            }
-
-            private bool IsVehicle()
-            {
-                bool flag = Physics.Raycast(player.eyes.HeadRay(), out hit, maxRayDistance);
-                var targetEntity = flag ? hit.GetEntity() : null;
-                if (targetEntity == null)
-                    return false;
-
-                if (entity == targetEntity)
-                    return true;
-
-                if (!(targetEntity is BaseVehicle || targetEntity is HotAirBalloon))
-                    return false;
-
-                entity = targetEntity;
-                return true;
-            }
-
-            private void RunEffect(BasePlayer player, string effectName) => EffectNetwork.Send(new Effect(effectName, player, 0, new Vector3(), new Vector3()), player.Connection);
-
-            private void Destroy()
-            {
-                CuiHelper.DestroyUi(player, portableVehiclesUI);
-                value = 0;
-                isActive = false;
-            }
-
-            void OnDestroy()
-            {
-                CuiHelper.DestroyUi(player, portableVehiclesUI);
-                Destroy(this);
-            }
-        }
-
         #endregion
 
         #region [Config]
@@ -887,9 +704,13 @@ namespace Oxide.Plugins
             {
                 chatIcon = 0,
                 hitsToPickup = 5,
+                pickupAnyVehicles = true,
+                pickupOwnVehicles = true,
+                requireBuildingPrivilege = true,
                 autoMount = false,
-                waterEntityShortName = "innertube",
+                waterEntityShortName = "kayak",
                 groundEntityShortName = "box.wooden.large",
+                bigModelEntityShortName = "abovegroundpool.deployed",
                 pickupableBlacklist = new List<string>
                 {
                     "rhib",
@@ -905,7 +726,9 @@ namespace Oxide.Plugins
                     "4module_car_spawned.entity",
                     "submarinesolo.entity",
                     "submarineduo.entity",
-                    "snowmobile"
+                    "snowmobile",
+                    "tomahasnowmobile",
+                    "tugboat"
                 },
                 version = Version
             };
@@ -929,17 +752,30 @@ namespace Oxide.Plugins
 
                 if (config == null)
                     LoadDefaultConfig();
+
+                if (config.version < Version)
+                    UpdateConfig();
             }
             catch
             {
-                for (var i = 0; i < 3; i++)
-                {
-                    PrintError("######### Configuration file is not valid! #########");
-                }
+                PrintError("######### Configuration file is not valid! #########");
                 return;
             }
 
             SaveConfig();
+        }
+
+        private void UpdateConfig()
+        {
+            Puts("Updating configuration values.....");
+
+            if (this.Version > new VersionNumber(1, 1, 2))
+            {
+                config = GetDefaultConfig();
+                Config.WriteObject(config);
+            };
+
+            Puts("Configuration updated");
         }
 
         #endregion
@@ -965,7 +801,7 @@ namespace Oxide.Plugins
                 {"Not Empty", "Vehicle is not empty! Check fuel or storages!"},
                 {"Hits", "You need to do more {0} hits!"},
                 {"Cupboard", "You need to have building privilege to do that!"},
-                {"BigModel", "That vehicle have big model and can kill you. Run away! It will be spawned in 5 seconds"},
+                {"BigModel", "That vehicle have big model and can kill you. Run away! It will be spawned in 3 seconds"},
                 {"Pickupable", "This vehicle cannot be picked up"},
                 {"Invalid Vehicle", "Vehicle name is invalid!"},
             }, this);
@@ -1045,10 +881,5 @@ namespace Oxide.Plugins
         private void SendMessage(BasePlayer player, string msg) => Player.Message(player, msg, config.chatIcon);
 
         #endregion
-
-        private void PrintDebug(object message)
-        {
-            Debug.Log($"{this.Name} Debug: {message}");
-        }
     }
 }

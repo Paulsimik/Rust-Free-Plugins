@@ -18,8 +18,12 @@
 {
   "Chat Icon": 0,
   "Hits count to pickup vehicle": 5,
+  "Pickup any vehicles": true,
+  "Pickup only your own vehicles": true,
+  "Pickup require building priviledge": true,
   "Automatically mount players": false,
-  "Item shortname for water entity": "innertube",
+  "Item shortname for water entity": "kayak",
+  "Item shortname for big models": "abovegroundpool.deployed",
   "Item shortname for ground entity": "box.wooden.large",
   "Blacklist pickupable vehicles shortname": [
     "rhib",
@@ -35,26 +39,30 @@
     "4module_car_spawned.entity",
     "submarinesolo.entity",
     "submarineduo.entity",
-    "snowmobile"
+    "snowmobile",
+    "tomahasnowmobile",
+    "tugboat"
   ],
   "version": {
     "Major": 1,
     "Minor": 1,
-    "Patch": 2
+    "Patch": 3
   }
 }
 ```
 
 # Available Vehicles
-    rhib
-    car (sedan)
-    boat
-    ch47
-    minicopter
-    horse
-    balloon
-    scraphelicopter
+    rhib, militaryboat, military
+    car, car1, sedan
+    boat, rowboat, motorboat
+    ch, ch47, chinook
+    copter, minicopter, mini
+    horse, unicorn, testridablehorse
+    balloon, hotairballoon
+    scrap, scrapheli, scraphelicopter, helicopter
     car2, car3, car4 for 2-3-4 module cars
     submarinesolo
     submarineduo
-    snowmobile
+    snowmobile, snow
+    tomahasnowmobile, tsnow, tsnowmobile
+    tugboat
