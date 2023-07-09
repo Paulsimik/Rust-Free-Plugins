@@ -26,6 +26,8 @@
     - Added option pickup any vehicles
     - Added option pickup own vehicles
     - Added option require building priviledge
+ 1.1.4
+    - Fixed minicopter skinid
 
  #######################################################################
 */
@@ -40,7 +42,7 @@ using VLB;
 
 namespace Oxide.Plugins
 {
-    [Info("Portable Vehicles", "Paulsimik", "1.1.3")]
+    [Info("Portable Vehicles", "Paulsimik", "1.1.4")]
     [Description("Give vehicles as item to your players")]
     public class PortableVehicles : RustPlugin
     {
@@ -573,7 +575,7 @@ namespace Oxide.Plugins
             },
             new VehicleEntry
             {
-                skinId = 2783365337,
+                skinId = 2906148311,
                 displayName = "MiniCopter",
                 prefab = "assets/content/vehicles/minicopter/minicopter.entity.prefab",
             },
