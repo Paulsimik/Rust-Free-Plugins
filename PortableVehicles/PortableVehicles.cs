@@ -40,9 +40,12 @@
  1.1.8
     - Changed ridable horse prefab
     - Remove blacklist vehicles from config
-    - Add options check storages before pickup
+    - Added option check storages before pickup
     - Fixed pickup
-    - Added options auto fuel to vehicle
+    - Added option auto fuel to vehicle
+ 1.1.9
+    - Added siegeweapons
+    - Added option ignore repair vehicles
 
  #######################################################################
 */
@@ -57,7 +60,7 @@ using VLB;
 
 namespace Oxide.Plugins
 {
-    [Info("Portable Vehicles", "Paulsimik", "1.1.8")]
+    [Info("Portable Vehicles", "Paulsimik", "1.1.9")]
     [Description("Give vehicles as item to your players")]
     public class PortableVehicles : RustPlugin
     {
@@ -222,7 +225,7 @@ namespace Oxide.Plugins
             }
 
             var diff = (Mathf.Abs(entity.MaxHealth() - entity.Health()));
-            if (diff > 5f)
+            if (config.needRepair && diff > 5f)
             {
                 Message(player, "Durability");
                 return null;
@@ -304,7 +307,7 @@ namespace Oxide.Plugins
             }
 
             var diff = (Mathf.Abs(balloon.MaxHealth() - balloon.Health()));
-            if (diff > 5f)
+            if (config.needRepair && diff > 5f)
             {
                 Message(player, "Durability");
                 return null;
@@ -469,7 +472,7 @@ namespace Oxide.Plugins
                 case "sidecar":
                     return 3284204759;
 
-                case "bicykle":
+                case "bicycle":
                 case "pedalbike":
                 case "bike":
                     return 3284205070;
@@ -477,6 +480,20 @@ namespace Oxide.Plugins
                 case "trike":
                 case "pedaltrike":
                     return 3284205351;
+
+                case "catapult":
+                    return 3446373078;
+
+                case "siegetower":
+                case "tower":
+                    return 3446373165;
+
+                case "batteringram":
+                case "ram":
+                    return 3446372968;
+
+                case "ballista":
+                    return 3446372639;
 
                 default:
                     return 0;
@@ -628,6 +645,9 @@ namespace Oxide.Plugins
 
             [JsonProperty("Check storages before pickup")]
             public bool checkStorages;
+
+            [JsonProperty("Need repair vehicles before pickup")]
+            public bool needRepair;
 
             [JsonProperty(PropertyName = "Auto amount fuel to vehicle")]
             public int vehicleFuel;
@@ -791,6 +811,31 @@ namespace Oxide.Plugins
                 skinId = 3284205351,
                 displayName = "Trike",
                 prefab = "assets/content/vehicles/bikes/pedaltrike.prefab"
+            },
+            new VehicleEntry
+            {
+                skinId = 3446373078,
+                displayName = "Catapult",
+                prefab = "assets/content/vehicles/siegeweapons/catapult/catapult.entity.prefab"
+            },
+            new VehicleEntry
+            {
+                skinId = 3446373165,
+                displayName = "Siege Tower",
+                prefab = "assets/content/vehicles/siegeweapons/siegetower/siegetower.entity.prefab"
+            },
+            new VehicleEntry
+            {
+                skinId = 3446372639,
+                displayName = "Ballista",
+                prefab = "assets/content/vehicles/siegeweapons/ballista/ballista.entity.prefab"
+            },
+            new VehicleEntry
+            {
+                skinId = 3446372968,
+                displayName = "Battering Ram",
+                prefab = "assets/content/vehicles/siegeweapons/batteringram/batteringram.entity.prefab",
+                bigModel = true
             }
         };
 
@@ -806,9 +851,6 @@ namespace Oxide.Plugins
 
             public void AddHit()
             {
-                if (entity.Health() < entity.MaxHealth())
-                    return;
-
                 hits++;
                 CancelInvoke(nameof(ResetHits));
                 Invoke(nameof(ResetHits), 60);
@@ -840,6 +882,7 @@ namespace Oxide.Plugins
                 requireBuildingPrivilege = true,
                 autoMount = false,
                 checkStorages = true,
+                needRepair = false,
                 vehicleFuel = 0,
                 waterEntityShortName = "kayak",
                 groundEntityShortName = "box.wooden.large",
@@ -890,6 +933,7 @@ namespace Oxide.Plugins
                 Config.WriteObject(config);
             };
 
+            config.version = Version;
             Puts("Configuration updated");
         }
 
