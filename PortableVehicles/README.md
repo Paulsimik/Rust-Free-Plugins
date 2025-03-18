@@ -1,5 +1,5 @@
 # Portable Vehicles
-    Gives vehicles as item to players .
+    Gives vehicles as item to players
 
 # Permissions
     portablevehicles.use - to chat command
@@ -30,22 +30,8 @@
   "Item shortname for big models": "furnace.large",
   "Item shortname for ground entity": "box.wooden.large",
   "Blacklist pickupable vehicles shortname": [
-    "rhib",
-    "rowboat",
-    "minicopter.entity",
-    "sedantest.entity",
-    "ch47.entity",
-    "hotairballoon",
-    "testridablehorse",
-    "scraptransporthelicopter",
-    "2module_car_spawned.entity",
-    "3module_car_spawned.entity",
-    "4module_car_spawned.entity",
-    "submarinesolo.entity",
-    "submarineduo.entity",
-    "snowmobile",
-    "tomahasnowmobile",
-    "tugboat"
+    "",
+    ""
   ],
   "version": {
     "Major": 1,
