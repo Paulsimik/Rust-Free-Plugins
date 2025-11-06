@@ -19,6 +19,8 @@
     - Added option for authorized players
     - Added option show online/offline raid
     - Change CanNetworkTo to object
+ 1.0.4
+    - Patch for Rust update changes
 
  #######################################################################
 */
@@ -32,7 +34,7 @@ using Newtonsoft.Json;
 
 namespace Oxide.Plugins
 {
-    [Info("Raid Markers", "Paulsimik", "1.0.3")]
+    [Info("Raid Markers", "Paulsimik", "1.0.4")]
     [Description("Raid Markers on the map")]
     class RaidMarkers : RustPlugin
     {
@@ -166,7 +168,7 @@ namespace Oxide.Plugins
         {
             foreach (var authPlayer in buildingPrivlidge.authorizedPlayers)
             {
-                BasePlayer player = BasePlayer.FindByID(authPlayer.userid);
+                BasePlayer player = BasePlayer.FindByID(authPlayer);
                 if (player != null && player.IsConnected)
                     return true;
             }

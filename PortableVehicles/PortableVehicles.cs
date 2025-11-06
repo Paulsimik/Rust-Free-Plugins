@@ -46,6 +46,9 @@
  1.1.9
     - Added siegeweapons
     - Added option ignore repair vehicles
+ 1.2.0
+    - Fixed lang message
+    - Fixed horse can't spawn
 
  #######################################################################
 */
@@ -60,7 +63,7 @@ using VLB;
 
 namespace Oxide.Plugins
 {
-    [Info("Portable Vehicles", "Paulsimik", "1.1.9")]
+    [Info("Portable Vehicles", "Paulsimik", "1.2.0")]
     [Description("Give vehicles as item to your players")]
     public class PortableVehicles : RustPlugin
     {
@@ -605,11 +608,11 @@ namespace Oxide.Plugins
                 return;
             }
 
-            var target = FindPlayer(arg, args[0]);
+            var target = FindPlayer(arg, arg.GetString(0));
             if (target == null)
                 return;
 
-            var skin = GetSkin(args[1]);
+            var skin = GetSkin(arg.GetString(1));
             if (skin == 0)
             {
                 Message(arg, "Invalid Vehicle");
@@ -722,7 +725,7 @@ namespace Oxide.Plugins
             {
                 skinId = 2783365408,
                 displayName = "Horse",
-                prefab = "assets/content/vehicles/horse/ridablehorse2.prefab"
+                prefab = "assets/content/vehicles/horse/ridablehorse.prefab"
             },
             new VehicleEntry
             {
@@ -952,7 +955,7 @@ namespace Oxide.Plugins
                 {"Permission", "You don't have permission to use that!"},
                 {"Received", "You received '{0}'!"},
                 {"No Player", "There are no players with that Name or steamID!"},
-                {"Multiple Players", "There are many players with that Name:\n{0}"},
+                {"Multiple Players", "There are many players with that Name"},
                 {"Pickup Ownership", "Only owner can pickup vehicles!"},
                 {"Fuel", "You need to remove fuel from vehicle first!"},
                 {"Recently Attacked", "Vehicle was recently attacked! {0}s left"},
